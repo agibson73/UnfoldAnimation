@@ -102,11 +102,13 @@ class FlipPushTransitioningAnimator: NSObject, UIViewControllerAnimatedTransitio
             
             
             }, completion: { finished in
-                //self.removeOtherViews(toView!)
-                // inform the context of completion
-                //containerView.bringSubviewToFront(toView!)
-                print("Finished")
-                transitionContext.completeTransition(true)
+                if transitionContext.transitionWasCancelled() {
+                    print("Cancelled")
+                    transitionContext.completeTransition(false)
+                } else {
+                    print("Finished")
+                    transitionContext.completeTransition(true)
+                }
                 
                 /**
                 *  Remove the animationView.  I think this will also get rid of all of our snapshots
@@ -190,8 +192,14 @@ class FlipPushTransitioningAnimator: NSObject, UIViewControllerAnimatedTransitio
                 
                 }, completion: { finished in
                    
-                    print("Finished")
-                    transitionContext.completeTransition(true)
+                    if transitionContext.transitionWasCancelled() {
+                        print("Cancelled")
+                        transitionContext.completeTransition(false)
+                    } else {
+                        print("Finished")
+                        transitionContext.completeTransition(true)
+                    }
+                    
                     /**
                     *  Remove the animationView.  I think this will also get rid of all of our snapshots
                     */
