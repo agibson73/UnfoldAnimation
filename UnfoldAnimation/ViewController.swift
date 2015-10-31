@@ -9,19 +9,13 @@ class ViewController: UIViewController, UINavigationControllerDelegate {
     // animator
     let flipPush = FlipPushTransitioningAnimator()
 
+    var interactionController: UIPercentDrivenInteractiveTransition?
+
     override func viewDidLoad() {
         super.viewDidLoad()
         
-     
-        let upSwipe   = UISwipeGestureRecognizer(target: self, action: Selector("swipeHandler:"))
-        
-        
-        upSwipe.direction   = .Up
-      
-        
-        self.view.addGestureRecognizer(upSwipe)
-        
-        
+        let panGesture = UIPanGestureRecognizer(target: self, action: Selector("panHandler:"))
+        self.view.addGestureRecognizer(panGesture)
         
         self.navigationController?.delegate = self
         self.navigationController?.view.backgroundColor = UIColor.whiteColor()
@@ -61,11 +55,37 @@ class ViewController: UIViewController, UINavigationControllerDelegate {
      
     }
 
-    func swipeHandler(sender:UISwipeGestureRecognizer) {
-        if (sender.direction == .Up) {
+    func navigationController(navigationController: UINavigationController, interactionControllerForAnimationController animationController: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
+        return self.interactionController
+    }
+
+    func panHandler(gestureRecognizer:UIPanGestureRecognizer) {
+        
+        switch gestureRecognizer.state {
+        case .Began:
+            self.interactionController = UIPercentDrivenInteractiveTransition()
             moveToNext()
-        } else if (sender.direction == .Down) {
-           // moveToPrev()
+            
+        case .Changed:
+            let translation = gestureRecognizer.translationInView(self.view)
+            let completionProgress = abs(translation.y/CGRectGetHeight(self.view.bounds))
+            self.interactionController!.updateInteractiveTransition(completionProgress)
+            
+        case .Ended:
+            let translation = gestureRecognizer.translationInView(self.view)
+            let completionProgress = abs(translation.y/CGRectGetHeight(self.view.bounds))
+            
+            if completionProgress >= 0.5 {
+                self.interactionController!.finishInteractiveTransition()
+            } else {
+                self.interactionController!.cancelInteractiveTransition()
+            }
+            
+            self.interactionController = nil
+            
+        default:
+            self.interactionController?.cancelInteractiveTransition()
+            self.interactionController = nil
         }
     }
 
