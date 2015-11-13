@@ -26,16 +26,22 @@ class FlipPushTransitioningAnimator: NSObject, UIViewControllerAnimatedTransitio
         let fromView        = transitionContext.viewControllerForKey(UITransitionContextFromViewControllerKey)?.view
         let duration        = 1.0 //transitionDuration(transitionContext)
         
-        if reverse == false{
+        if reverse == false {
 
-        // Get Screenshots
-        let toViewSnapshot = createSnapshots(toView!, afterUpdate: true)
-        let flippedSectionOfToView = toViewSnapshot[1]// UP of toView
+            // Get Screenshots
+            let toViewSnapshot = createSnapshots(toView!, afterUpdate: true)
+            let flippedSectionOfToView = toViewSnapshot[1]// UP of toView
     
+            let fromViewSnapshot = createSnapshots(fromView!, afterUpdate: false)
+            let flippedSectionOfFromView = fromViewSnapshot[0] // DOWN of fromView
+
+            // Preparing shadows
+            let toViewBottomShadowLayer = UIView(frame: toViewSnapshot[0].frame)
+            let toViewTopShadowLayer    = UIView(frame: toViewSnapshot[1].frame)
+            let fromViewTopShadowLayer  = UIView(frame: fromViewSnapshot[1].frame)
+
             
         
-        let fromViewSnapshot = createSnapshots(fromView!, afterUpdate: false)
-        let flippedSectionOfFromView = fromViewSnapshot[0] // DOWN of fromView
         
         // Prepare rotation
         var transform = CATransform3DIdentity
@@ -48,7 +54,7 @@ class FlipPushTransitioningAnimator: NSObject, UIViewControllerAnimatedTransitio
         
         updateAnchorPointAndOffset(CGPointMake(0.5, 0.0), view: flippedSectionOfFromView)
         updateAnchorPointAndOffset(CGPointMake(0.5, 1.0 ),view: flippedSectionOfToView)
-        
+        updateAnchorPointAndOffset(CGPointMake(0.5, 1.0), view: toViewTopShadowLayer)
         
         
         let animationView = UIView(frame: containerView.frame)
@@ -62,18 +68,24 @@ class FlipPushTransitioningAnimator: NSObject, UIViewControllerAnimatedTransitio
         // now all in animationView
             
         animationView.addSubview(toViewSnapshot[0])
-        
-        let trans = CATransform3DIdentity
-        flippedSectionOfToView.layer.transform = CATransform3DRotate(trans, CGFloat(-M_PI_2), 1, 0, 0)
-        flippedSectionOfToView.alpha = 0
+        animationView.addSubview(toViewBottomShadowLayer)
 
+            let trans = CATransform3DIdentity
+            flippedSectionOfToView.layer.transform = CATransform3DRotate(trans, CGFloat(-M_PI_2), 1, 0, 0)
+            flippedSectionOfToView.alpha = 0
+            toViewTopShadowLayer.layer.transform = CATransform3DRotate(trans, CGFloat(-M_PI_2), 1, 0, 0)
     
         animationView.addSubview(flippedSectionOfFromView)
         animationView.addSubview(fromViewSnapshot[1])
         animationView.addSubview(flippedSectionOfToView)
+        animationView.addSubview(toViewTopShadowLayer)
+        animationView.addSubview(fromViewTopShadowLayer)
             
-   
-            // we really need shadows
+            // Configuring shadows
+            toViewBottomShadowLayer.backgroundColor = UIColor(red: 0, green: 0, blue: 0, alpha: 0.5)
+            toViewTopShadowLayer.backgroundColor    = UIColor(red: 0, green: 0, blue: 0, alpha: 0.3)
+            fromViewTopShadowLayer.backgroundColor  = UIColor.blackColor()
+            fromViewTopShadowLayer.alpha = 0.0
             
 
         
@@ -82,7 +94,7 @@ class FlipPushTransitioningAnimator: NSObject, UIViewControllerAnimatedTransitio
             
             UIView.addKeyframeWithRelativeStartTime(0.0, relativeDuration: 0.5, animations: { () -> Void in
                 flippedSectionOfFromView.layer.transform = CATransform3DMakeRotation(CGFloat(M_PI_2), 1.0, 0.0, 0.0)
-                
+                toViewBottomShadowLayer.alpha = 0.0
         
             })
             UIView.addKeyframeWithRelativeStartTime(0.5, relativeDuration: 0.01, animations: {
@@ -91,12 +103,15 @@ class FlipPushTransitioningAnimator: NSObject, UIViewControllerAnimatedTransitio
                 flippedSectionOfToView.alpha = 1
                 // for some reason this is very important.  I need to study this more
                 flippedSectionOfToView.layer.zPosition = 5
-               
+                toViewTopShadowLayer.layer.zPosition = 5
+
             })
             
             UIView.addKeyframeWithRelativeStartTime(0.51, relativeDuration: 0.49, animations: { () -> Void in
                 flippedSectionOfToView.layer.transform =  CATransform3DRotate(trans,CGFloat((M_PI_2/180)), 1, 0, 0)
-
+                toViewTopShadowLayer.layer.transform = CATransform3DRotate(trans,CGFloat((M_PI_2/180)), 1, 0, 0)
+                toViewTopShadowLayer.alpha = 0.0
+                fromViewTopShadowLayer.alpha = 0.5
             })
             
             
@@ -134,18 +149,22 @@ class FlipPushTransitioningAnimator: NSObject, UIViewControllerAnimatedTransitio
             let fromViewSnapshot = createSnapshots(fromView!, afterUpdate: false)
             let flippedSectionOfFromView = fromViewSnapshot[1] // Top of fromView
             
+            
+            // Prepare shadows
+            let toViewTopShadowLayer        = UIView(frame: toViewSnapshot[1].frame)
+            let toViewBottomShadowLayer     = UIView(frame: toViewSnapshot[0].frame)
+            let fromViewBottomShadowLayer   = UIView(frame: fromViewSnapshot[0].frame)
+
+            
             // Prepare rotation
             var transform = CATransform3DIdentity
             transform.m34 = -0.002
             containerView.layer.sublayerTransform = transform
             
             
-            
-            
-            
             updateAnchorPointAndOffset(CGPointMake(0.5, 0.0), view: flippedSectionOfToView)
             updateAnchorPointAndOffset(CGPointMake(0.5, 1.0 ),view: flippedSectionOfFromView)
-            
+            updateAnchorPointAndOffset(CGPointMake(0.5, 0.0), view: toViewBottomShadowLayer)
             
             // order matters
             let animationView = UIView(frame: containerView.frame)
@@ -155,24 +174,31 @@ class FlipPushTransitioningAnimator: NSObject, UIViewControllerAnimatedTransitio
             containerView.insertSubview(toView!, belowSubview: animationView)
             animationView.addSubview(toViewSnapshot[0])
             animationView.addSubview(toViewSnapshot[1])
+            animationView.addSubview(toViewTopShadowLayer)
             animationView.addSubview(fromViewSnapshot[0])
+            animationView.addSubview(fromViewBottomShadowLayer)
             animationView.addSubview(flippedSectionOfToView)
+            animationView.addSubview(toViewBottomShadowLayer)
             animationView.addSubview(flippedSectionOfFromView)
             
             
             let trans = CATransform3DIdentity
             flippedSectionOfToView.layer.transform = CATransform3DRotate(trans, CGFloat(M_PI_2), 1, 0, 0)
             flippedSectionOfToView.alpha = 0
-
+            toViewBottomShadowLayer.layer.transform = CATransform3DRotate(trans, CGFloat(M_PI_2), 1, 0, 0)
             
-            
+            // Configuring shadows
+            toViewTopShadowLayer.backgroundColor        = UIColor(red: 0, green: 0, blue: 0, alpha: 0.5)
+            toViewBottomShadowLayer.backgroundColor     = UIColor(red: 0, green: 0, blue: 0, alpha: 0.3)
+            fromViewBottomShadowLayer.backgroundColor   = UIColor.blackColor()
+            fromViewBottomShadowLayer.alpha = 0.0
             
             UIView.animateKeyframesWithDuration(duration, delay: 0, options: UIViewKeyframeAnimationOptions.LayoutSubviews, animations: {
                 
                 
                 UIView.addKeyframeWithRelativeStartTime(0.0, relativeDuration: 0.5, animations: { () -> Void in
                     flippedSectionOfFromView.layer.transform = CATransform3DMakeRotation(CGFloat(-M_PI_2), 1.0, 0.0, 0.0)
-                    
+                    toViewTopShadowLayer.alpha = 0.0
                     
                 })
                 UIView.addKeyframeWithRelativeStartTime(0.5, relativeDuration: 0.0001, animations: {
@@ -180,11 +206,14 @@ class FlipPushTransitioningAnimator: NSObject, UIViewControllerAnimatedTransitio
                     
                     flippedSectionOfToView.alpha = 1
                     flippedSectionOfToView.layer.zPosition = 5
-                    
+                    toViewBottomShadowLayer.layer.zPosition = 5
                 })
                 
                 UIView.addKeyframeWithRelativeStartTime(0.51, relativeDuration: 0.4999, animations: { () -> Void in
                     flippedSectionOfToView.layer.transform =  CATransform3DRotate(trans,CGFloat((-M_PI_2/180)), 1, 0, 0)
+                    toViewBottomShadowLayer.layer.transform = CATransform3DRotate(trans,CGFloat((-M_PI_2/180)), 1, 0, 0)
+                    toViewBottomShadowLayer.alpha = 0.0
+                    fromViewBottomShadowLayer.alpha = 0.5
     
                 })
                 
